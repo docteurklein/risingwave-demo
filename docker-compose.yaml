@@ -1,0 +1,18 @@
+services:
+  mysql:
+    restart: always
+    image: mysql
+    command: '--log-bin --binlog-format=row --binlog-row-image=full'
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: debezium
+      MYSQL_PASSWORD: debezium
+  rw:
+    restart: always
+    image: risingwavelabs/risingwave:nightly-20230709
+    command: playground
+    ports:
+      - '4566:4566'
+      - '5691:5691'
