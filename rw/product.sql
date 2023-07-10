@@ -25,6 +25,7 @@ create table pim1.product (
 );
 
 drop sink if exists product_stats;
+drop sink if exists product_value_edited;
 drop materialized view if exists pim1.product_value;
 
 create materialized view pim1.product_value as
@@ -47,7 +48,7 @@ create materialized view pim1.product_value as
 ;
 
 create sink product_stats as
-select coalesce(p.family_id, 0) family, count(*) as num_values
+select coalesce(p.family_id, 0) family, count(pv) as num_values
 from pim1.product_value pv
 inner join pim1.product p on (pv.product_id = p.id)
 group by 1
@@ -56,4 +57,13 @@ with (
     jdbc.url='jdbc:mysql://mysql:3306/pim1?user=root&password=root',
     table.name='product_stats',
     type='upsert'
+);
+
+create sink product_value_edited from pim1.product_value
+with (
+   connector='kafka',
+   type='append-only',
+   force_append_only='true',
+   properties.bootstrap.server='redpanda:9092',
+   topic='product_value_edited'
 );
