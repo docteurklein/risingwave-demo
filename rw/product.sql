@@ -48,7 +48,7 @@ create materialized view pim1.product_value as
 ;
 
 create sink product_stats as
-select coalesce(p.family_id, 0) family, count(pv) as num_values
+select coalesce(p.family_id, 0) family, count(*) as num_values
 from pim1.product_value pv
 inner join pim1.product p on (pv.product_id = p.id)
 group by 1
@@ -61,9 +61,10 @@ with (
 
 create sink product_value_edited from pim1.product_value
 with (
-   connector='kafka',
-   type='append-only',
-   force_append_only='true',
-   properties.bootstrap.server='redpanda:9092',
-   topic='product_value_edited'
+    connector='kafka',
+    type='upsert',
+    primary_key='product_id, attribute, channel, locale',
+    -- force_append_only='true',
+    properties.bootstrap.server='redpanda:9092',
+    topic='product_value_edited'
 );
