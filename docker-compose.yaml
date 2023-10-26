@@ -9,16 +9,18 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_USER: debezium
       MYSQL_PASSWORD: debezium
+
   rw:
     restart: always
-    image: risingwavelabs/risingwave:nightly-20230709
+    image: risingwavelabs/risingwave:latest
     command: playground
     ports:
       - '4566:4566'
       - '5691:5691'
 
   redpanda:
-    image: docker.vectorized.io/vectorized/redpanda:v21.11.3
+    restart: always
+    image: docker.vectorized.io/vectorized/redpanda:latest
     command:
      - redpanda start
      - --overprovisioned
@@ -39,3 +41,13 @@ services:
      - 8081:8081
      - 8082:8082
     healthcheck: { test: curl -f localhost:9644/v1/status/ready, interval: 1s, start_period: 30s }
+
+  es:
+    restart: always
+    image: 'docker.elastic.co/elasticsearch/elasticsearch:8.10.2'
+    environment:
+      ES_JAVA_OPTS: '-Xms2g -Xmx2g'
+      discovery.type: 'single-node'
+      xpack.security.enabled: 'false'
+    ports:
+      - '9200:9200'
