@@ -54,8 +54,12 @@ create view es_product as
 select p.uuid::text pkey, -- concat_ws('-', p.uuid, coalesce(pv.channel, 'any'), coalesce(pv.locale, 'any')) pkey,
 p.id, -- pv.channel, pv.locale,
 jsonb_object_agg(
-  concat_ws('-', pv.attribute, coalesce(pv.channel, 'any'), coalesce(pv.locale, 'any')),
-  pv.value
+  pv.attribute,
+  jsonb_build_object(
+    coalesce(pv.channel, 'any'), jsonb_build_object(
+      coalesce(pv.locale, 'any'), pv.value
+    )
+  )
 ) values
 from pim1.product p
 join pim1.product_value pv using (uuid)

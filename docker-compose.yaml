@@ -12,7 +12,7 @@ services:
 
   rw:
     restart: always
-    image: risingwavelabs/risingwave:latest
+    image: risingwavelabs/risingwave:nightly-20231108
     command: playground
     ports:
       - '4566:4566'
