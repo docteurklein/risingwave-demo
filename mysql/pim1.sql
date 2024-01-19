@@ -20,11 +20,11 @@ insert into pim_catalog_product (uuid, id, family_id, is_enabled, created, updat
     }
 }');
 
-insert into pim_catalog_attribute (id, code) values
-(1, 'a1'),
-(2, 'a2');
+-- insert into pim_catalog_attribute (id, code) values
+-- (1, 'a1'),
+-- (2, 'a2');
 
-insert into pim_catalog_attribute_translation (foreign_key, locale, label) values
-(1, 'en_US', 'a1 US'),
-(1, 'fr_FR', 'a1 FR'),
-(2, 'fr_FR', 'a2 FR');
+-- insert into pim_catalog_attribute_translation (foreign_key, locale, label) values
+-- (1, 'en_US', 'a1 US'),
+-- (1, 'fr_FR', 'a1 FR'),
+-- (2, 'fr_FR', 'a2 FR');

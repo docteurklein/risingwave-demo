@@ -1,49 +1,28 @@
 services:
-  mysql:
-    restart: always
+  mysql1:
+    restart: unless-stopped
     image: mysql
     command: '--log-bin --binlog-format=row --binlog-row-image=full'
-    ports:
-      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: debezium
-      MYSQL_PASSWORD: debezium
+
+  mysql2:
+    restart: unless-stopped
+    image: mysql
+    command: '--log-bin --binlog-format=row --binlog-row-image=full'
+    environment:
+      MYSQL_ROOT_PASSWORD: root
 
   rw:
-    restart: always
-    image: risingwavelabs/risingwave:nightly-20231108
+    restart: unless-stopped
+    image: risingwavelabs/risingwave:v1.6.0
     command: playground
     ports:
       - '4566:4566'
       - '5691:5691'
 
-  redpanda:
-    restart: always
-    image: docker.vectorized.io/vectorized/redpanda:latest
-    command:
-     - redpanda start
-     - --overprovisioned
-     - --smp 1
-     - --memory 1G
-     - --reserve-memory 0M
-     - --node-id 0
-     - --check=false
-     - --kafka-addr 0.0.0.0:9092
-     - --advertise-kafka-addr redpanda:9092
-     - --pandaproxy-addr 0.0.0.0:8082
-     - --advertise-pandaproxy-addr redpanda:8082
-     - --set redpanda.enable_transactions=true
-     - --set redpanda.enable_idempotence=true
-     - --set redpanda.auto_create_topics_enabled=true
-    ports:
-     - 9092:9092
-     - 8081:8081
-     - 8082:8082
-    healthcheck: { test: curl -f localhost:9644/v1/status/ready, interval: 1s, start_period: 30s }
-
   es:
-    restart: always
+    restart: unless-stopped
     image: 'docker.elastic.co/elasticsearch/elasticsearch:8.10.2'
     environment:
       ES_JAVA_OPTS: '-Xms2g -Xmx2g'
@@ -51,3 +30,18 @@ services:
       xpack.security.enabled: 'false'
     ports:
       - '9200:9200'
+
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085 --log-http --verbosity debug --user-output-enabled
+    ports:
+      - '8085:8085'
+
+  debezium:
+    restart: unless-stopped
+    image: debezium/server:2.5
+    volumes:
+      - ./debezium:/debezium/conf
+
+volumes:
+  debezium: ~
