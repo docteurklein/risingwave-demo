@@ -1,10 +1,12 @@
 services:
   mysql1:
     restart: unless-stopped
-    image: mysql
-    command: '--log-bin --binlog-format=row --binlog-row-image=full'
+    image: mysql:8.0-debian
+    command: '--log-bin --binlog-format=row --binlog-row-image=full --binlog-row-metadata=full'
     environment:
       MYSQL_ROOT_PASSWORD: root
+    ports:
+      - '3306:3306'
 
   mysql2:
     restart: unless-stopped
@@ -15,7 +17,7 @@ services:
 
   rw:
     restart: unless-stopped
-    image: risingwavelabs/risingwave:v1.6.0
+    image: risingwavelabs/risingwave:v1.7.0
     command: playground
     ports:
       - '4566:4566'
@@ -61,11 +63,26 @@ services:
     ports:
       - '8085:8085'
 
-  debezium:
+  # debezium:
+  #   restart: unless-stopped
+  #   image: debezium/server:2.5
+  #   volumes:
+  #     - ./debezium:/debezium/conf
+
+  cdc-rs:
     restart: unless-stopped
-    image: debezium/server:2.5
+    image: docteurklein/cdc-rs:jadifsbmc542c3gkdn460wr1a8mijvvs
+    environment:
+      PUBSUB_EMULATOR_HOST: 'localhost:8085'
+      SOURCE:  'mysql://root:root@localhost:33006'
+      STATE: cdc-rs.sqlite
+      SERVER_ID: 1
+      REGEX: '^akeneo_pim.*\.pim_catalog_product'
+      SCRIPT: /etc/cdc-rs/test.rhai
+    network_mode: host
     volumes:
-      - ./debezium:/debezium/conf
+      - ./test.rhai:/etc/cdc-rs/test.rhai
 
 volumes:
   debezium: ~
+
