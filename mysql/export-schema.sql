@@ -15,7 +15,7 @@ type_map(mysql, rw) as (
     row('tinytext', 'text'),
     row('mediumtext', 'text'),
     row('longtext', 'text'),
-    row('binary', 'text'), -- bytea -- TODO: weirdly, this needs to be handled in mysql sink with `decode(uuid, 'hex')`
+    row('binary', 'text'), -- bytea -- TODO: weirdly, this needs to be handled in mysql sink with `decode(some_col, 'hex')`
     row('varbinary', 'bytea'),
     row('blob', 'bytea'),
     row('mediumblob', 'bytea'),
@@ -46,8 +46,8 @@ cols(table_schema, table_name, cols, rw_table_ddl, rw_sink_cols) as (
         separator ', '
     ),
     group_concat(
-        concat_ws(' ', case when c.data_type = 'binary' then concat('decode(', column_name, ', ''hex'') uuid') else column_name end)
-        order by ordinal_position asc 
+        concat_ws(' ', case when c.data_type = 'binary' then concat('decode(', column_name, ', ''hex'') ', column_name) else column_name end)
+        order by ordinal_position asc
         separator ', '
     )
     from information_schema.columns c

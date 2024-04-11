@@ -20,7 +20,6 @@ gcloud pubsub --project my-project-id topics create  all_pims.pim_catalog_produc
 gcloud pubsub --project my-project-id subscriptions create --topic all_pims.pim_catalog_product all_pims.pim_catalog_product --retain-acked-messages
 gcloud pubsub --project my-project-id subscriptions create --topic all_pims.pim_catalog_product_model all_pims.pim_catalog_product_model --retain-acked-messages
 
-
 curl -X PUT "localhost:9200/product?pretty" -H 'Content-Type: application/json' -d'
   {
     "mappings": {
@@ -46,6 +45,12 @@ curl -X PUT "localhost:9200/product?pretty" -H 'Content-Type: application/json' 
 ```
 dc exec -T mysql mysql -q -uroot -proot akeneo_pim < mysql/export-schema.sql
 
+dc exec -T mysql mysql -q -uroot -proot akeneo_pim -e 'select table_name from pim_table where table_schema in ("akeneo_pim_test", "akeneo_pim")' | tail -n +2 |
+  xargs -P0 -I{} gcloud pubsub --project my-project-id topics create all_pims.{}
+
+dc exec -T mysql mysql -q -uroot -proot akeneo_pim -e 'select table_name from pim_table where table_schema in ("akeneo_pim_test", "akeneo_pim")' | tail -n +2 |
+  xargs -P10 -I{} gcloud pubsub --project my-project-id subscriptions create --topic all_pims.{} all_pims.{} --retain-acked-messages
+
 dc exec -T mysql mysql -q -uroot -proot akeneo_pim -e 'select def from pim_table where table_name = "pim_catalog_attribute"' | tail -n +2 |
   jq -r --arg 'creds' '{}' '"create table \(.table) (
     tenant text, \(.cols.rw_table_ddl),
@@ -60,11 +65,11 @@ dc exec -T mysql mysql -q -uroot -proot akeneo_pim -e 'select def from pim_table
 
 
 dc exec -T mysql mysql -q -uroot -proot akeneo_pim -e 'select def from pim_table where table_name = "pim_catalog_product"' | tail -n +2 |
-  jq -r --arg 'creds' '{}' '"create sink \(.table)_to_pim2 as
-    select \(.cols.rw_sink_cols) from \(.table) where tenant = \'akeneo_pim\'
+  jq -r --arg 'creds' '{}' --arg source_tenant 'akeneo_pim' --arg target_tenant 'pim2' '"create sink \(.table)_to_pim2 as
+    select \(.cols.rw_sink_cols) from \(.table) where tenant = \'\($source_tenant)\'
   with (
     connector = \'jdbc\',
-    jdbc.url = \'jdbc:mysql://mysql2:3306/pim2?user=root&password=root\',
+    jdbc.url = \'jdbc:mysql://mysql2:3306/\($target_tenant)?user=root&password=root\',
     primary_key = \'uuid\',
     table.name = \'\(.table)\',
     type = \'upsert\'
